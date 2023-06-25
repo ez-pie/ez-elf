@@ -1,6 +1,6 @@
 [project]
 name = "ezelf"
-version = "0.0.3"
+version = "0.0.4"
 description = "A elf for ezpie"
 readme = "README.md"
 requires-python = ">=3.7"
