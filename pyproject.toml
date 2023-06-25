@@ -1,6 +1,6 @@
 [project]
 name = "ezelf"
-version = "0.0.1"
+version = "0.0.2"
 description = "A elf for ezpie"
 readme = "README.md"
 requires-python = ">=3.7"
@@ -11,8 +11,12 @@ classifiers = [
     "Operating System :: OS Independent",
 ]
 
+dependencies = [
+  "typer"
+]
+
 [project.scripts]
-ezelf = "ezelf:main"
+ezelf = "ezelf.main:app"
 
 [build-system]
 requires = ["hatchling"]
