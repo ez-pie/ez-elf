@@ -1,2 +1,3 @@
-def ezecho(input: str) -> str:
+def ezecho(input):
+    """Return input"""
     return input

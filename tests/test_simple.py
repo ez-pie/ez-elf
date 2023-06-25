@@ -4,12 +4,14 @@
 
 import unittest
 
-from ezelf.simple import add_one
+from ezelf.sync.ezpie import ezecho
 
 
 class TestSimple(unittest.TestCase):
-    def test_add_one(self):
-        self.assertEqual(add_one(5), 6)
+    def test_ezecho(self):
+        self.assertEqual(ezecho("string"), "string")
+        self.assertEqual(ezecho(1), 1)
+        self.assertEqual(ezecho(3.14), 3.14)
 
 
 if __name__ == "__main__":
