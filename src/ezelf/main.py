@@ -15,8 +15,11 @@ def callback():
 
 
 @app.command()
-def save_my_dir(dir_path: str):
+def save_my_dir(dir_path: str = None, include_hidden: bool = False):
     """
     Pack the contents of given directory and save it to ezpie.
     """
-    typer.echo(ezpie.ezecho(dir_path))
+    if dir_path is None:
+        ezpie.copy_working_dir(include_hidden)
+    else:
+        ezpie.copy_dir(dir_path, include_hidden)
