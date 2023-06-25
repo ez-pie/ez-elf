@@ -18,22 +18,21 @@ def callback():
 
 
 @app.command()
-def save_my_dir(dir_path: str = None, include_hidden: bool = False):
+def save_my_dir(src: str = None, dest: str = None, include_hidden: bool = False):
     """
     Pack the contents of given directory and save it to ezpie.
     """
-    if dir_path is None:
-        ezpie.copy_working_dir(include_hidden)
-    else:
-        ezpie.copy_dir(dir_path, include_hidden)
+    ezpie.copy_dir(src, dest, include_hidden)
 
 
 @app.command()
-def save_files(file: Annotated[Optional[List[str]], typer.Option()] = None):
+def save_files(
+    file: Annotated[Optional[List[str]], typer.Option()] = None, dest: str = None
+):
     """
     Pack a list of files and save it to ezpie, relative paths are reserved.
     """
     if not file:
         print("Please specify at least one file.")
         raise typer.Abort()
-    ezpie.copy_files(file)
+    ezpie.copy_files(file, dest)

@@ -7,6 +7,7 @@ from typing import List
 
 WORKING_DIR = "/home/workspace"
 ARTIFACTS_DIR = "/home/artifacts"
+
 TAR_ARCHIVE_NAME = "archive.tar.gz"
 ZIP_ARCHIVE_NAME = "archive.zip"
 
@@ -15,17 +16,22 @@ def ezecho(input):
     return input
 
 
-def copy_working_dir(include_hidden_files=False):
-    """将工作目录下的文件打包并拷贝到 artifacts 目录"""
-    copy_dir(WORKING_DIR, include_hidden_files)
+def copy_dir(dir: str = None, dest_dir: str = None, include_hidden_files=False):
+    """将目录下的文件打包并拷贝到 artifacts 目录"""
+    if dir is None:
+        dir = WORKING_DIR
+    if dest_dir is None:
+        dest_dir = ARTIFACTS_DIR
+
+    create_zip_archive_from_dir(dir, dest_dir, ZIP_ARCHIVE_NAME)
 
 
-def copy_dir(dir: str, include_hidden_files=False):
-    _ = create_zip_archive_from_dir(dir, ARTIFACTS_DIR, ZIP_ARCHIVE_NAME)
+def copy_files(file_list: List[str], dest_dir: str):
+    """将文件打包并拷贝到 artifacts 目录"""
+    if dest_dir is None:
+        dest_dir = ARTIFACTS_DIR
 
-
-def copy_files(file_list: List[str]):
-    _ = create_zip_archive_from_file_list(file_list, ARTIFACTS_DIR, ZIP_ARCHIVE_NAME)
+    create_zip_archive_from_file_list(file_list, dest_dir, ZIP_ARCHIVE_NAME)
 
 
 # **************** utils ****************
