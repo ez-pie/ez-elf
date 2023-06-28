@@ -1,15 +1,120 @@
+# -*- coding=utf-8
 import os
 import shutil
 import tarfile
 import tempfile
 import zipfile
-from typing import List
+from typing import List, Union
+
+import requests
+from qcloud_cos import CosConfig, CosS3Client
 
 WORKING_DIR = "/home/workspace"
 ARTIFACTS_DIR = "/home/artifacts"
 
 TAR_ARCHIVE_NAME = "archive.tar.gz"
 ZIP_ARCHIVE_NAME = "archive.zip"
+
+ARTIFACTS_BUCKET_NAME = "workstation-test"
+APPID = "1313546141"
+secret_id = "IKIDHTVO5mLpU3ReorlV4UmvxxvnV3q6JOK6"
+secret_key = "ht2871scFlAWmvKcXO8lKoBRdlrQuJbn"
+region = "ap-hongkong"
+token = None
+scheme = "https"
+
+sync_host = "http://43.135.89.27:8080"
+sync_api = "/api/common/task/project/file/sync"
+
+config = None
+client = None
+
+
+class EzpieSyncError(Exception):
+    def __init__(self, message: str):
+        self.message: str = message
+
+
+def task_id() -> str:
+    """
+    从环境变量获取 task id
+    """
+    task_id = os.environ.get("TASKID", "NO_TASKID")
+    return task_id
+
+
+def file_size() -> int:
+    """
+    获取压缩文件大小, 单位: KB
+    """
+    file = os.path.join(ARTIFACTS_DIR, ZIP_ARCHIVE_NAME)
+    file_size = os.path.getsize(file)  # unit: bytes
+    return file_size // 1024
+
+
+def tencent_cos_url() -> str:
+    """
+    获取腾讯云对象存储的url, 由于私读私写该url实际不可访问
+    """
+    global config
+    global client
+    if config is None:
+        config = CosConfig(
+            Region=region,
+            SecretId=secret_id,
+            SecretKey=secret_key,
+            Token=token,
+            Scheme=scheme,
+        )
+    if client is None:
+        client = CosS3Client(config)
+
+    url = client.get_object_url(
+        Bucket=f"{ARTIFACTS_BUCKET_NAME}-{APPID}",
+        Key=f"artifacts/task-{task_id()}/archive.zip",
+    )
+    return url
+
+
+def prepare_save_param() -> Union[dict, None]:
+    """
+    准备调用 ezpie 接口的数据, 该接口用于保存所提交文件的信息, 方便网页下载
+    """
+    tid = task_id()
+    if tid == "NO_TASKID":
+        return None
+
+    data = {
+        "fileKey": f"/artifacts/task-{tid}/",
+        "fileSize": file_size(),
+        "taskId": int(tid),
+        "name": ZIP_ARCHIVE_NAME,
+        "bucketName": f"{ARTIFACTS_BUCKET_NAME}-{APPID}",
+        "url": tencent_cos_url(),
+    }
+    return data
+
+
+def save_record() -> bool:
+    """
+    True 表示成功, False表示失败
+    """
+    data = prepare_save_param()
+    if data is None:
+        raise EzpieSyncError("data is None")
+
+    url = f"{sync_host}{sync_api}"
+    response = requests.post(url, json=data)
+
+    response_code = response.status_code
+    response_data = response.json()
+    print(response_code)
+    print(response_data)
+
+    if response_code == 200 and response_data["success"] == "true":
+        return
+
+    raise EzpieSyncError(f"status_code={response_code}, data: {response_data}")
 
 
 def ezecho(input):
@@ -24,6 +129,12 @@ def copy_dir(dir: str = None, dest_dir: str = None, include_hidden_files=False):
         dest_dir = ARTIFACTS_DIR
 
     create_zip_archive_from_dir(dir, dest_dir, ZIP_ARCHIVE_NAME)
+    for _ in range(5):
+        try:
+            save_record()
+            break
+        except EzpieSyncError as e:
+            print(e)
 
 
 def copy_files(file_list: List[str], dest_dir: str):
@@ -32,6 +143,12 @@ def copy_files(file_list: List[str], dest_dir: str):
         dest_dir = ARTIFACTS_DIR
 
     create_zip_archive_from_file_list(file_list, dest_dir, ZIP_ARCHIVE_NAME)
+    for _ in range(5):
+        try:
+            save_record()
+            break
+        except EzpieSyncError as e:
+            print(e)
 
 
 # **************** utils ****************
