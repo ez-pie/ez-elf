@@ -3,6 +3,8 @@ from typing import List, Optional
 import typer
 from typing_extensions import Annotated
 
+import ezelf
+
 from .sync import ezpie
 
 app = typer.Typer()
@@ -15,6 +17,14 @@ def callback():
 
     - package code and save to ezpie.
     """
+
+
+@app.command()
+def version():
+    """
+    Show the version of ezelf.
+    """
+    typer.echo(ezelf.__version__)
 
 
 @app.command()

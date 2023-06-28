@@ -1,6 +1,6 @@
 [project]
 name = "ezelf"
-version = "0.0.6"
+version = "0.0.7"
 description = "A elf for ezpie"
 readme = "README.md"
 requires-python = ">=3.7"
@@ -12,7 +12,9 @@ classifiers = [
 ]
 
 dependencies = [
-  "typer[all]"
+  "typer[all]",
+  "cos-python-sdk-v5",
+  "requests",
 ]
 
 [project.scripts]
