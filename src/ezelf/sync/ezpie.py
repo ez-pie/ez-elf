@@ -56,6 +56,8 @@ def tencent_cos_url() -> str:
     """
     获取腾讯云对象存储的url, 由于私读私写该url实际不可访问
     """
+    global config
+    global client
     if config is None:
         config = CosConfig(
             Region=region,
