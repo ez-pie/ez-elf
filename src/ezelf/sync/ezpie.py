@@ -113,6 +113,7 @@ def save_record():
 
     sync_url = f"{sync_host}{sync_api}"
 
+    logging.info(f"payload: {data}")
     try:
         response = requests.post(sync_url, json=data, timeout=(6, 4))
     except Exception as e:
