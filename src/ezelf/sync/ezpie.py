@@ -1,4 +1,5 @@
 # -*- coding=utf-8
+import logging
 import os
 import shutil
 import tarfile
@@ -12,7 +13,7 @@ from qcloud_cos import CosConfig, CosS3Client
 WORKING_DIR = "/home/workspace"
 ARTIFACTS_DIR = "/home/artifacts"
 
-TAR_ARCHIVE_NAME = "archive.tar.gz"
+# TAR_ARCHIVE_NAME = "archive.tar.gz"
 ZIP_ARCHIVE_NAME = "archive.zip"
 
 ARTIFACTS_BUCKET_NAME = "workstation-test"
@@ -23,8 +24,10 @@ region = "ap-hongkong"
 token = None
 scheme = "https"
 
+
 sync_host = "http://43.135.89.27:8080"
 sync_api = "/api/common/task/project/file/sync"
+
 
 config = None
 client = None
@@ -82,6 +85,7 @@ def prepare_save_param() -> Union[dict, None]:
     """
     tid = task_id()
     if tid == "NO_TASKID":
+        logging.error("env no task id")
         return None
 
     data = {
@@ -95,26 +99,38 @@ def prepare_save_param() -> Union[dict, None]:
     return data
 
 
-def save_record() -> bool:
+def save_record():
     """
-    True 表示成功, False表示失败
+    失败抛出 EzpieSyncError
     """
-    data = prepare_save_param()
+    try:
+        data = prepare_save_param()
+    except Exception as e:
+        raise EzpieSyncError(f"prepare param raise exception: {e}")
+
     if data is None:
         raise EzpieSyncError("data is None")
 
-    url = f"{sync_host}{sync_api}"
-    response = requests.post(url, json=data)
+    sync_url = f"{sync_host}{sync_api}"
+
+    try:
+        response = requests.post(sync_url, json=data, timeout=(6, 4))
+    except Exception as e:
+        raise EzpieSyncError(f"requests except, {e}")
 
     response_code = response.status_code
-    response_data = response.json()
-    print(response_code)
-    print(response_data)
+    if response_code != 200:
+        raise EzpieSyncError(f"status_code error, status_code={response_code}")
 
-    if response_code == 200 and response_data["success"] == "true":
-        return
+    try:
+        response_data = response.json()
+    except Exception as e:
+        raise EzpieSyncError(f"decode json error, {e}")
 
-    raise EzpieSyncError(f"status_code={response_code}, data: {response_data}")
+    if not response_data["success"]:
+        raise EzpieSyncError(f"sync failed: {response_data}")
+
+    logging.info(f"sync success: {response_data}")
 
 
 def ezecho(input):
@@ -132,9 +148,10 @@ def copy_dir(dir: str = None, dest_dir: str = None, include_hidden_files=False):
     for _ in range(5):
         try:
             save_record()
+            logging.info("save success")
             break
         except EzpieSyncError as e:
-            print(e)
+            logging.critical(f"save failed: {e}")
 
 
 def copy_files(file_list: List[str], dest_dir: str):
@@ -146,9 +163,10 @@ def copy_files(file_list: List[str], dest_dir: str):
     for _ in range(5):
         try:
             save_record()
+            logging.info("save success")
             break
         except EzpieSyncError as e:
-            print(e)
+            logging.critical(f"save failed: {e}")
 
 
 # **************** utils ****************

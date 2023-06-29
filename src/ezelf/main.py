@@ -1,3 +1,11 @@
+import warnings
+
+warnings.filterwarnings("ignore")
+
+
+import logging
+import os
+from pathlib import Path
 from typing import List, Optional
 
 import typer
@@ -6,6 +14,17 @@ from typing_extensions import Annotated
 import ezelf
 
 from .sync import ezpie
+
+log_dir = os.path.join(str(Path.home()), ".ezelf/log")
+if not os.path.exists(log_dir):
+    os.makedirs(log_dir)
+
+# FORMAT = "%(asctime)s [%(pathname)s:%(lineno)d] %(levelname)s %(message)s"
+FORMAT = "%(asctime)s %(levelname)s %(message)s"
+logging.basicConfig(
+    filename=os.path.join(log_dir, "ezelf.log"), format=FORMAT, level=logging.INFO
+)
+
 
 app = typer.Typer()
 
