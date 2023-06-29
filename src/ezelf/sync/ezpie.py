@@ -95,26 +95,31 @@ def prepare_save_param() -> Union[dict, None]:
     return data
 
 
-def save_record() -> bool:
+def save_record():
     """
-    True 表示成功, False表示失败
+    失败抛出 EzpieSyncError
     """
     data = prepare_save_param()
     if data is None:
         raise EzpieSyncError("data is None")
 
     url = f"{sync_host}{sync_api}"
-    response = requests.post(url, json=data)
+    try:
+        response = requests.post(url, json=data, timeout=(3, 1))
+    except Exception as e:
+        raise EzpieSyncError(f"request except, {e}")
 
     response_code = response.status_code
-    response_data = response.json()
-    print(response_code)
-    print(response_data)
+    if response_code != 200:
+        raise EzpieSyncError(f"status_code error, status_code={response_code}")
 
-    if response_code == 200 and response_data["success"] == "true":
-        return
+    try:
+        response_data = response.json()
+    except Exception as e:
+        raise EzpieSyncError(f"decode json error, {e}")
 
-    raise EzpieSyncError(f"status_code={response_code}, data: {response_data}")
+    if not response_data["success"]:
+        raise EzpieSyncError(f"sync failed")
 
 
 def ezecho(input):
